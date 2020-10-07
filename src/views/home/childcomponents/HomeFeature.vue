@@ -1,6 +1,7 @@
 <template>
     <div class="home-feature">
-
+        <a href="https://act.mogujie.com/zzlx67"></a>
+        <img src="~assets/img/home/recommend_bg.jpg" alt="特点货品">
     </div>
 </template>
 
@@ -13,5 +14,7 @@ export default {
 
 
 <style scoped>
-
+.home-feature img {
+    width: 100%;
+}
 </style>

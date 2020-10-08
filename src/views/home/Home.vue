@@ -4,20 +4,32 @@
     <nav-bar class="home-nav">
       <span slot="center">主页</span>
     </nav-bar>
-    <!-- 轮播图 -->
-    <home-swiper :banner="banner" />
-    <!-- 推荐 -->
-    <home-recommend :recommend="recommend" />
-    <!-- Feature -->
-    <home-feature />
-    <!-- 选项卡 -->
-    <tab-control
-      class="tab-control"
-      :tabs="['流行', '新款', '精选']"
-      @tabClick="tabClick"
-    />
-    <!-- 菜单列表 -->
-    <good-list :goods="showGoods" />
+    <!-- 滚动的插件 -->
+    <scroll
+      class="content"
+      ref="scroll"
+      :probe-type="3"
+      @scroll="contentScroll"
+      :pull-up-load="true"
+      @pullingUp="pullingUp"
+    >
+      <!-- 轮播图 -->
+      <home-swiper :banner="banner" />
+      <!-- 推荐 -->
+      <home-recommend :recommend="recommend" />
+      <!-- Feature -->
+      <home-feature />
+      <!-- 选项卡 -->
+      <tab-control
+        class="tab-control"
+        :tabs="['流行', '新款', '精选']"
+        @tabClick="tabClick"
+      />
+      <!-- 菜单列表 -->
+      <good-list :goods="showGoods" />
+    </scroll>
+    <!-- 返回顶部的按钮 -->
+    <back-top @click.native="backClick" v-show="isShowBackBtn" />
   </div>
 </template>
 
@@ -25,6 +37,8 @@
 import NavBar from "components/common/navbar/NavBar";
 import TabControl from "components/content/tabcontrol/TabControl";
 import GoodList from "components/content/goods/GoodList";
+import Scroll from "components/common/scroll/Scroll";
+import BackTop from "components/content/backtop/BackTop";
 
 import HomeSwiper from "./childcomponents/HomeSwiper";
 import HomeRecommend from "./childcomponents/HomeRecommend";
@@ -37,14 +51,19 @@ export default {
     NavBar,
     TabControl,
     GoodList,
+    Scroll,
+    BackTop,
     HomeSwiper,
     HomeRecommend,
     HomeFeature,
   },
   computed: {
     showGoods() {
-      return this.goods[this.currentType].list
-    }
+      return this.goods[this.currentType].list;
+    },
+    isShowBackBtn() {
+      return -this.position.y > 1000 ? true : false;
+    },
   },
   data() {
     return {
@@ -55,7 +74,8 @@ export default {
         new: { page: 0, list: [] },
         sell: { page: 0, list: [] },
       },
-      currentType: 'pop',
+      currentType: "pop",
+      position: { x: 0, y: 0 },
     };
   },
   created() {
@@ -72,6 +92,23 @@ export default {
     // 子组件传递过来的事件
     tabClick(index) {
       this.currentType = Object.keys(this.goods)[index];
+    },
+    // 使用native修饰符直接监听组件根元素的原生事件
+    backClick() {
+      // 使用refs直接访问子组件的方法
+      // 回到（0,0）坐标。时间是500ms
+      this.$refs.scroll.scrollTo(0, 0, 500);
+    },
+    // 监听滑动
+    contentScroll(position) {
+      this.position = position;
+    },
+    // 监听上拉加载
+    pullingUp() {
+      this.getGoods(this.currentType);
+      // better-scroll的方法，用于重新计算可滚动区域的大小
+      // ？？？会等待上面的异步函数执行完之后再执行吗
+      this.$refs.scroll.refresh();
     },
 
     // 网络请求的方法
@@ -95,6 +132,8 @@ export default {
         console.log(res);
         this.goods[type].list.push(...res.data.list);
         this.goods[type].page++;
+        // 调用下拉加载完成的方法，以便下一次下拉加载
+        this.$refs.scroll.finishPullUp()
       });
     },
   },
@@ -103,7 +142,8 @@ export default {
 
 <style scoped>
 #home {
-  padding: 44px 0 0 0;
+  padding: 44px 0 49px 0;
+  height: 100vh;
 }
 
 .home-nav {
@@ -121,5 +161,8 @@ export default {
   position: sticky;
   top: 44px;
   z-index: 10;
+}
+.content {
+  height: 100%;
 }
 </style>

@@ -36,7 +36,7 @@ export default {
         this.scroll.on('scroll',(position) => {
             this.$emit('scroll',position)
         })
-        // 监听上拉加载事件
+        // 监听是否滚动到底部
         this.scroll.on('pullingUp',() => {
             this.$emit('pullingUp')
         })
@@ -46,7 +46,7 @@ export default {
         scrollTo(x,y,time=500) {
             this.scroll.scrollTo(x,y,time)
         },
-        // 完成上拉加载更多的方法
+        // 完成上拉加载更多的方法，以便于下一次的上拉加载
         finishPullUp() {
             this.scroll.finishPullUp()
         },

@@ -4,9 +4,17 @@
     <nav-bar class="home-nav">
       <span slot="center">主页</span>
     </nav-bar>
+    <!-- 选项卡 -->
+      <tab-control
+        :tabs="['流行', '新款', '精选']"
+        @tabClick="tabClick"
+        ref="tabControl1"
+        class="tab-control1"
+        :class="{'is-show': isTabControlFixed}"
+      />
     <!-- 滚动的插件 -->
     <scroll
-      class="content"
+      class="content back-color"
       ref="scroll"
       :probe-type="3"
       @scroll="contentScroll"
@@ -14,16 +22,16 @@
       @pullingUp="pullingUp"
     >
       <!-- 轮播图 -->
-      <home-swiper :banner="banner" />
+      <home-swiper :banner="banner" @homeSwiperImageLoad="homeSwiperImageLoad" />
       <!-- 推荐 -->
       <home-recommend :recommend="recommend" />
       <!-- Feature -->
       <home-feature />
       <!-- 选项卡 -->
       <tab-control
-        class="tab-control"
         :tabs="['流行', '新款', '精选']"
         @tabClick="tabClick"
+        ref="tabControl2"
       />
       <!-- 菜单列表 -->
       <good-list :goods="showGoods" />
@@ -45,6 +53,7 @@ import HomeRecommend from "./childcomponents/HomeRecommend";
 import HomeFeature from "./childcomponents/HomeFeature";
 
 import { getHomeMultidata, getHomeGoods } from "network/home.js";
+import { debounce } from 'common/util.js'
 export default {
   name: "Home",
   components: {
@@ -64,6 +73,9 @@ export default {
     isShowBackBtn() {
       return -this.position.y > 1000 ? true : false;
     },
+    isTabControlFixed() {
+      return -this.position.y > this.offsetSetTop ? true : false;
+    }
   },
   data() {
     return {
@@ -76,6 +88,7 @@ export default {
       },
       currentType: "pop",
       position: { x: 0, y: 0 },
+      offsetSetTop: 0
     };
   },
   created() {
@@ -86,12 +99,25 @@ export default {
     this.getGoods("new");
     this.getGoods("sell");
   },
+  mounted() {
+    // 包装一层防抖函数
+    const refresh = debounce(this.$refs.scroll.refresh,50,1,2)
+    // 监听item中图片的加载完成
+    this.$bus.$on('itemImageLoad',() => {
+      refresh();
+    });
+  },
   methods: {
     // 事件监听的方法
 
     // 子组件传递过来的事件
     tabClick(index) {
       this.currentType = Object.keys(this.goods)[index];
+      this.$refs.tabControl1.currentIndex = index;
+      this.$refs.tabControl2.currentIndex = index;
+    },
+    homeSwiperImageLoad() {
+      this.offsetSetTop = this.$refs.tabControl2.$el.offsetTop - 40;
     },
     // 使用native修饰符直接监听组件根元素的原生事件
     backClick() {
@@ -101,6 +127,7 @@ export default {
     },
     // 监听滑动
     contentScroll(position) {
+    // 获取现在滚动到的坐标位置
       this.position = position;
     },
     // 监听上拉加载
@@ -108,7 +135,7 @@ export default {
       this.getGoods(this.currentType);
       // better-scroll的方法，用于重新计算可滚动区域的大小
       // ？？？会等待上面的异步函数执行完之后再执行吗
-      this.$refs.scroll.refresh();
+      // this.$refs.scroll.refresh();
     },
 
     // 网络请求的方法
@@ -117,7 +144,7 @@ export default {
     getMultidata() {
       getHomeMultidata()
         .then((res) => {
-          console.log(res);
+          // console.log(res);
           this.banner = res.data.banner.list;
           this.recommend = res.data.recommend.list;
           this.keywords = res.data.keywords.list;
@@ -129,10 +156,9 @@ export default {
     getGoods(type) {
       const page = this.goods[type].page + 1;
       getHomeGoods(type, page).then((res) => {
-        console.log(res);
         this.goods[type].list.push(...res.data.list);
         this.goods[type].page++;
-        // 调用下拉加载完成的方法，以便下一次下拉加载
+        // 调用scroll插件的完成上拉加载事件，以便下一次下拉加载
         this.$refs.scroll.finishPullUp()
       });
     },
@@ -157,12 +183,25 @@ export default {
   z-index: 10;
 }
 
-.tab-control {
-  position: sticky;
+.tab-control1 {
+  position: fixed;
   top: 44px;
+  left: 0;
+  right: 0;
+  opacity: 0;
+}
+
+.is-show  {
+  opacity: 1;
   z-index: 10;
 }
+
+
 .content {
   height: 100%;
+}
+
+.back-color {
+  background-color: #fff;
 }
 </style>

@@ -101,9 +101,9 @@ export default {
   },
   mounted() {
     // 包装一层防抖函数
-    const refresh = debounce(this.$refs.scroll.refresh,50,1,2)
+    const refresh = debounce(this.$refs.scroll.refresh,50)
     // 监听item中图片的加载完成
-    this.$bus.$on('itemImageLoad',() => {
+    this.$bus.$on('homeItemImageLoad',() => {
       refresh();
     });
   },

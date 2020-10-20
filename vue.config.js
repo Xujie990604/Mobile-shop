@@ -1,10 +1,12 @@
 module.exports = {
-    // 打开这些配置就能在手机上通过pc的内网地址来查看项目
+    // 打开这配置，在本地开启一个服务器。运行项目。
     // devServer: {
     //     open: true,
     //     host: '0.0.0.0',
     //     port: 8080,
     // },
+    // 打开之后dist文件夹的index.html打开不为空白
+    publicPath: "./",
     configureWebpack: {
         resolve: {
             alias: {

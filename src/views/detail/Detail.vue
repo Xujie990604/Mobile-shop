@@ -16,8 +16,9 @@
       <detail-comment-info ref="comment" :commentInfo="commentInfo" />
       <good-list ref="recommend" :goods="recommends" />
     </scroll>
-    <detail-bottom-bar />
+    <detail-bottom-bar @addCart="addCart" />
     <back-top v-show="isShowBtn" @click.native="backClick" />
+    <toast :message="message" :show="isShow" />
   </div>
 </template>
 
@@ -34,6 +35,7 @@ import DetailBottomBar from "./childcomponents/DetailBottomBar";
 import Scroll from "components/common/scroll/Scroll.vue";
 import GoodList from "components/content/goods/GoodList.vue";
 import BackTop from "components/content/backtop/BackTop.vue";
+import Toast from 'components/common/toast/Toast.vue'
 
 import {
   getDetail,
@@ -43,6 +45,7 @@ import {
   GoodsParam,
 } from "network/detail.js";
 import { debounce } from "common/util.js";
+import { mapActions } from 'vuex'
 
 export default {
   name: "Detail",
@@ -64,7 +67,9 @@ export default {
       refresh: null,
       themeTopYs: [],
       currentIndex: 0,
-      position: {}
+      position: {},
+      isShow: false,
+      message: '添加购物车成功'
     };
   },
   mounted() {
@@ -125,6 +130,9 @@ export default {
   },
   updated() {},
   methods: {
+    ...mapActions({
+      addToCart: 'addCart'
+    }),
     imageLoad() {
       this.refresh();
       this.offsetTop_debounce();
@@ -148,6 +156,25 @@ export default {
     // 点击按钮回到顶部
     backClick() {
       this.$refs.scroll.scrollTo(0,0,200);
+    },
+    // 点击添加到购物车中
+    addCart() {
+      // 获取购物车中所需要的的信息
+      const product = {}
+      product.image = this.topImages[0];
+      product.title = this.good.title;
+      product.desc = this.good.desc;
+      product.price = this.good.realPrice;  
+      product.id = this.id;
+      // 将数据添加到store中
+      this.addToCart(product)
+      .then(res => {
+        this.isShow = true
+        this.message = res;
+        setTimeout(() => {
+          this.isShow = false
+        },2000)
+      })
     }
   },
   components: {
@@ -161,7 +188,8 @@ export default {
     DetailBottomBar,
     Scroll,
     GoodList,
-    BackTop
+    BackTop,
+    Toast
   },
 };
 </script>
